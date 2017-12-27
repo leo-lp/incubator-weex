@@ -103,18 +103,6 @@ public class IndexActivity extends AbstractWeexActivity {
     };
 
     LocalBroadcastManager.getInstance(this).registerReceiver(mReloadReceiver, new IntentFilter(WXSDKEngine.JS_FRAMEWORK_RELOAD));
-
-    requestWeexPermission();
-  }
-
-  private void requestWeexPermission() {
-    if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-      if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-        Toast.makeText(this, "please give me the permission", Toast.LENGTH_SHORT).show();
-      } else {
-        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, WRITE_EXTERNAL_STORAGE_PERMISSION_REQUEST_CODE);
-      }
-    }
   }
 
   @Override
@@ -178,10 +166,10 @@ public class IndexActivity extends AbstractWeexActivity {
     super.onException(wxsdkInstance,s,s1);
     mProgressBar.setVisibility(View.GONE);
     mTipView.setVisibility(View.VISIBLE);
-    if (TextUtils.equals(s, WXRenderErrorCode.WX_NETWORK_ERROR)) {
+    if (TextUtils.equals(s, WXRenderErrorCode.DegradPassivityCode.WX_DEGRAD_ERR_NETWORK_BUNDLE_DOWNLOAD_FAILED.getDegradErrorCode())) {
       mTipView.setText(R.string.index_tip);
     } else {
-      mTipView.setText("render error:" + s1);
+      mTipView.setText("network render error:" + s1);
     }
   }
 

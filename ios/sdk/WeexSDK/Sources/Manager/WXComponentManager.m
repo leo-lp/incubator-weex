@@ -124,7 +124,7 @@ static NSThread *WXComponentThread;
     }
 }
 
-+ (void)_performBlockOnComponentThread:(void (^)())block
++ (void)_performBlockOnComponentThread:(void (^)(void))block
 {
     if([NSThread currentThread] == [self componentThread]){
         block();
@@ -136,7 +136,7 @@ static NSThread *WXComponentThread;
     }
 }
 
-+ (void)_performBlockSyncOnComponentThread:(void (^)())block
++ (void)_performBlockSyncOnComponentThread:(void (^)(void))block
 {
     if([NSThread currentThread] == [self componentThread]){
         block();
@@ -180,7 +180,7 @@ static NSThread *WXComponentThread;
     _rootCSSNode->style.dimensions[CSS_HEIGHT] =  self.weexInstance.frame.size.height ?: CSS_UNDEFINED;
 }
 
-- (void)_addUITask:(void (^)())block
+- (void)_addUITask:(void (^)(void))block
 {
     if(!_uiPrerenderTaskQueue){
         _uiPrerenderTaskQueue = [NSMutableDictionary new];
@@ -711,25 +711,19 @@ static css_node_t * rootNodeGetChild(void *context, int i)
 - (void)unload
 {
     WXAssertComponentThread();
-    
-    NSEnumerator *enumerator = [_indexDict objectEnumerator];
-    WXComponent *component;
-    while ((component = [enumerator nextObject])) {
-        dispatch_async(dispatch_get_main_queue(), ^{
+    [self invalidate];
+    [self _stopDisplayLink];
+    NSEnumerator *enumerator = [[_indexDict copy] objectEnumerator];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        WXComponent *component;
+        while ((component = [enumerator nextObject])) {
             [component _unloadViewWithReusing:NO];
-        });
-    }
+        }
+        _rootComponent = nil;
+    });
     
     [_indexDict removeAllObjects];
     [_uiTaskQueue removeAllObjects];
-
-    dispatch_async(dispatch_get_main_queue(), ^{
-         _rootComponent = nil;
-    });
-    
-    [self _stopDisplayLink];
-    
-    _isValid = NO;
 }
 
 - (void)invalidate
@@ -901,12 +895,12 @@ static css_node_t * rootNodeGetChild(void *context, int i)
 
 @end
 
-void WXPerformBlockOnComponentThread(void (^block)())
+void WXPerformBlockOnComponentThread(void (^block)(void))
 {
     [WXComponentManager _performBlockOnComponentThread:block];
 }
 
-void WXPerformBlockSyncOnComponentThread(void (^block)())
+void WXPerformBlockSyncOnComponentThread(void (^block)(void))
 {
     [WXComponentManager _performBlockSyncOnComponentThread:block];
 }
